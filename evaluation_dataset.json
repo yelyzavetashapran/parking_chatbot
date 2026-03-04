@@ -1,0 +1,77 @@
+[
+  {
+    "question": "What is the hourly parking price?",
+    "relevant_texts": ["1 hour: $5"],
+    "ground_truth_answer": "The price for 1 hour of parking is $5."
+  },
+  {
+    "question": "How much does a full day cost?",
+    "relevant_texts": ["1 day: $25"],
+    "ground_truth_answer": "One day of parking costs $25."
+  },
+  {
+    "question": "Do you offer monthly parking subscriptions?",
+    "relevant_texts": ["Monthly subscription: $400"],
+    "ground_truth_answer": "Yes, a monthly subscription costs $400."
+  },
+  {
+    "question": "Is SmartPark open 24/7?",
+    "relevant_texts": ["Open 24 hours a day, 7 days a week"],
+    "ground_truth_answer": "Yes, SmartPark is open 24 hours a day, 7 days a week."
+  },
+  {
+    "question": "Where is SmartPark located?",
+    "relevant_texts": ["15 Green Street, Downtown"],
+    "ground_truth_answer": "SmartPark is located at 15 Green Street, Downtown."
+  },
+  {
+    "question": "Do you support electric vehicles?",
+    "relevant_texts": ["Electric vehicles (EV charging available)"],
+    "ground_truth_answer": "Yes, electric vehicles are supported and EV charging is available."
+  },
+  {
+    "question": "How can I reserve a parking space?",
+    "relevant_texts": ["Reservations can be made via phone, our website, or mobile app"],
+    "ground_truth_answer": "You can reserve a parking space via phone, website, or mobile app."
+  },
+  {
+    "question": "What information is required for a reservation?",
+    "relevant_texts": ["Name", "Surname", "Car number", "Reservation start date", "Reservation end date"],
+    "ground_truth_answer": "To reserve a parking space, you must provide your name, surname, car number, reservation start date, and reservation end date."
+  },
+  {
+    "question": "Can I stay longer than I reserved?",
+    "relevant_texts": ["You can stay longer than you reserved if there are no reservations for the lot or other free lots are available at that time"],
+    "ground_truth_answer": "Yes, you can stay longer if there are no reservations or other lots are free at that time."
+  },
+  {
+    "question": "How do I cancel or change my reservation?",
+    "relevant_texts": ["calling the administration (public phone number 123456789)"],
+    "ground_truth_answer": "You can cancel or change your reservation by calling the administration at 123456789."
+  },
+  {
+    "question": "What safety rules should I follow?",
+    "relevant_texts": [
+      "No overnight camping or storing personal items",
+      "Children must be supervised at all times",
+      "Fire lanes must be kept clear at all times",
+      "Smoking is prohibited in all parking areas"
+    ],
+    "ground_truth_answer": "SmartPark requires that you do not camp or store items overnight, supervise children, keep fire lanes clear, and not smoke in parking areas."
+  },
+  {
+    "question": "What additional services are available?",
+    "relevant_texts": [
+      "EV charging stations: Fast and standard charging available",
+      "Valet parking for special events",
+      "Car wash and detailing services available on request",
+      "Monthly corporate plans with reserved spaces and priority service"
+    ],
+    "ground_truth_answer": "Additional services include EV charging, valet parking, car wash/detailing, and monthly corporate plans with reserved spaces."
+  },
+  {
+    "question": "How can I contact SmartPark?",
+    "relevant_texts": ["Phone: 123456789", "Email: support@smartpark.com", "Website: www.smartpark.com"],
+    "ground_truth_answer": "You can contact SmartPark by phone at 123456789, by email at support@smartpark.com, or via the website www.smartpark.com."
+  }
+]

@@ -1,0 +1,68 @@
+Welcome to SmartPark Parking Service.
+
+Name: SmartPark
+
+General Information:
+SmartPark provides secure 24/7 parking services in the city center.
+Our facilities are equipped with surveillance cameras and round-the-clock security personnel.
+We offer both short-term and long-term parking options.
+We also provide valet services for special occasions.
+
+Location:
+15 Green Street, Downtown.
+Nearby landmarks include the City Mall, Central Library, and Green Park.
+
+Working Hours:
+Open 24 hours a day, 7 days a week.
+Our parking attendants are available on-site at all times to assist customers.
+
+Prices:
+- 1 hour: $5
+- 2 hours: $9
+- Half day (up to 12 hours): $18
+- 1 day: $25
+- 1 week: $120
+- Monthly subscription: $400
+Discounts available for corporate customers and long-term reservations.
+
+Parking Spaces:
+Total capacity: 8 spaces.
+Available for:
+- Cars
+- Motorcycles
+- Electric vehicles (EV charging available)
+We have designated accessible parking spots for people with disabilities.
+Oversized vehicle spots available upon request.
+
+Reservation:
+You can reserve a parking space in advance by providing:
+- Name
+- Surname
+- Car number
+- Reservation start date
+- Reservation end date
+Reservations can be made via phone, our website, or mobile app.
+The payment is conducted directly on the parking location by parking attendant. 
+The fee is calculated based on your actual parking time. 
+You can stay longer than you reserved if there are no reservations for the lot or other free lots are available at that time.
+You can change or cancel your reservation only by calling the administration (public phone number 123456789).
+Reservation confirmations are sent via email or SMS.
+
+Safety & Rules:
+- No overnight camping or storing personal items.
+- Children must be supervised at all times.
+- SmartPark is not responsible for lost items inside vehicles.
+- Fire lanes must be kept clear at all times.
+- Smoking is prohibited in all parking areas.
+
+Additional Services:
+- EV charging stations: Fast and standard charging available.
+- Valet parking for special events.
+- Car wash and detailing services available on request.
+- Monthly corporate plans with reserved spaces and priority service.
+- Customer support via phone and email 24/7.
+
+Parking Contact Information:
+Phone: 123456789
+Email: support@smartpark.com
+Website: www.smartpark.com
