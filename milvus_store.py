@@ -1,44 +1,44 @@
 # milvus_store.py
-
 from pymilvus import connections
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Milvus
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from langchain.schema import Document
+from typing import List
 import config
 
 
-def start_connection():
-    connections.connect(
-        host=config.MILVUS_HOST,
-        port=config.MILVUS_PORT
-    )
-    print(f"Connected to Milvus at {config.MILVUS_HOST}:{config.MILVUS_PORT}")
+def _get_connection_args() -> dict:
+    return {
+        "host": config.MILVUS_HOST,
+        "port": config.MILVUS_PORT
+    }
 
 
-def create_vector_store():
-    """
-    Creates vector store from parking_info.txt
-    Applies improved chunking and metadata.
-    """
-    start_connection()
+def _create_embeddings() -> OpenAIEmbeddings:
+    return OpenAIEmbeddings()
 
+
+def _load_documents() -> List[Document]:
     loader = TextLoader(config.PARKING_INFO_FILE)
-    documents = loader.load()
+    return loader.load()
 
-    # Better chunking for small dataset
+
+def _split_documents(documents: List[Document]) -> List[Document]:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=config.CHUNK_SIZE,        # recommend: 300
-        chunk_overlap=config.CHUNK_OVERLAP,  # recommend: 30
+        chunk_size=config.CHUNK_SIZE,
+        chunk_overlap=config.CHUNK_OVERLAP,
         separators=["\n\n", "\n", ".", " "]
     )
 
-    split_docs = splitter.split_documents(documents)
+    return splitter.split_documents(documents)
 
-    # Add metadata (chunk_id + source)
+
+def _add_metadata(docs: List[Document]) -> List[Document]:
     enhanced_docs = []
-    for i, doc in enumerate(split_docs):
+
+    for i, doc in enumerate(docs):
         enhanced_docs.append(
             Document(
                 page_content=doc.page_content.strip(),
@@ -49,34 +49,47 @@ def create_vector_store():
             )
         )
 
-    embeddings = OpenAIEmbeddings()
+    return enhanced_docs
+
+
+def start_connection():
+    connections.connect(**_get_connection_args())
+
+    print(
+        f"Connected to Milvus at "
+        f"{config.MILVUS_HOST}:{config.MILVUS_PORT}"
+    )
+
+
+def create_vector_store():
+
+    start_connection()
+
+    documents = _load_documents()
+    split_docs = _split_documents(documents)
+    enhanced_docs = _add_metadata(split_docs)
+
+    embeddings = _create_embeddings()
 
     vector_store = Milvus.from_documents(
         enhanced_docs,
         embeddings,
         collection_name=config.MILVUS_COLLECTION,
-        connection_args={
-            "host": config.MILVUS_HOST,
-            "port": config.MILVUS_PORT
-        },
+        connection_args=_get_connection_args(),
     )
 
-    print(f"Created {len(enhanced_docs)} chunks and stored in Milvus.")
+    print(
+        f"Created {len(enhanced_docs)} chunks and stored in Milvus."
+    )
 
     return vector_store
 
 
 def load_vector_store():
-    """
-    Loads existing Milvus collection.
-    """
-    embeddings = OpenAIEmbeddings()
+    embeddings = _create_embeddings()
 
     return Milvus(
         embedding_function=embeddings,
         collection_name=config.MILVUS_COLLECTION,
-        connection_args={
-            "host": config.MILVUS_HOST,
-            "port": config.MILVUS_PORT
-        },
+        connection_args=_get_connection_args(),
     )

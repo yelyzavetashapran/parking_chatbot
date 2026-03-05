@@ -1,12 +1,9 @@
 import os
 import re
+from typing import Tuple, Optional
 from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# -----------------------------
-# POLICY DEFINITIONS
-# -----------------------------
 
 SECURITY_POLICY = """
 Classify the user message into one of the following categories:
@@ -36,9 +33,7 @@ system_exploration_attempt:
 Return ONLY the category name.
 """
 
-# -----------------------------
-# PUBLIC INFO ALLOWLIST
-# -----------------------------
+
 PUBLIC_INFO_KEYWORDS = [
     "location",
     "parking location",
@@ -53,9 +48,29 @@ PUBLIC_INFO_KEYWORDS = [
     "parking contact information"
 ]
 
-# -----------------------------
-# INPUT CLASSIFICATION
-# -----------------------------
+
+def _contains_public_info(text: str) -> bool:
+    text_lower = text.lower()
+    return any(keyword in text_lower for keyword in PUBLIC_INFO_KEYWORDS)
+
+
+def _redact_patterns(text: str) -> str:
+    # Redact API keys
+    text = re.sub(r"sk-[A-Za-z0-9]{20,}", "[REDACTED_API_KEY]", text)
+
+    # Redact .env references
+    text = re.sub(r"\.env", "[REDACTED_FILE]", text)
+
+    # Redact SQL queries
+    text = re.sub(
+        r"(SELECT|INSERT|DELETE|DROP|UPDATE)\s+.*",
+        "[REDACTED_SQL]",
+        text,
+        flags=re.IGNORECASE
+    )
+
+    return text
+
 
 def classify_input(text: str) -> str:
     try:
@@ -67,32 +82,32 @@ def classify_input(text: str) -> str:
                 {"role": "user", "content": text},
             ],
         )
+
         return response.choices[0].message.content.strip()
+
     except Exception:
+        # Fail-safe: treat as normal request
         return "normal_request"
 
 
 def check_moderation(text: str) -> bool:
-    """
-    Returns True if text is safe.
-    """
     try:
         response = client.moderations.create(
             model="omni-moderation-latest",
             input=text
         )
+
         flagged = response.results[0].flagged
         return not flagged
+
     except Exception:
+        # Fail-open strategy for moderation
         return True
 
-# -----------------------------
-# PUBLIC GUARD FUNCTIONS
-# -----------------------------
 
-def guard_input(text: str):
-    # Allow public info explicitly
-    if any(keyword in text.lower() for keyword in PUBLIC_INFO_KEYWORDS):
+def guard_input(text: str) -> Tuple[bool, Optional[str]]:
+    # Allow explicitly public information
+    if _contains_public_info(text):
         return True, None
 
     # Moderation check
@@ -113,21 +128,9 @@ def guard_input(text: str):
     if category == "system_exploration_attempt":
         return False, "Internal system details cannot be disclosed."
 
+    # Fail-safe default
     return True, None
 
 
 def guard_output(text: str) -> str:
-    """
-    Sanitizes possible accidental leaks in output.
-    """
-
-    # Redact API keys
-    text = re.sub(r"sk-[A-Za-z0-9]{20,}", "[REDACTED_API_KEY]", text)
-
-    # Redact .env references
-    text = re.sub(r"\.env", "[REDACTED_FILE]", text)
-
-    # Redact SQL keywords if accidentally generated
-    text = re.sub(r"(SELECT|INSERT|DELETE|DROP|UPDATE)\s+.*", "[REDACTED_SQL]", text, flags=re.IGNORECASE)
-
-    return text
+    return _redact_patterns(text)

@@ -1,77 +1,94 @@
 [
   {
-    "question": "What is the hourly parking price?",
+    "question": "How much does parking cost for one hour?",
     "relevant_texts": ["1 hour: $5"],
-    "ground_truth_answer": "The price for 1 hour of parking is $5."
+    "ground_truth_answer": "Parking for one hour costs $5."
   },
   {
-    "question": "How much does a full day cost?",
+    "question": "What is the cost if I park for a full day?",
     "relevant_texts": ["1 day: $25"],
-    "ground_truth_answer": "One day of parking costs $25."
+    "ground_truth_answer": "A full day of parking costs $25."
   },
   {
-    "question": "Do you offer monthly parking subscriptions?",
+    "question": "Is there a monthly parking plan available?",
     "relevant_texts": ["Monthly subscription: $400"],
-    "ground_truth_answer": "Yes, a monthly subscription costs $400."
+    "ground_truth_answer": "Yes, SmartPark offers a monthly subscription for $400."
   },
   {
-    "question": "Is SmartPark open 24/7?",
+    "question": "Are you open all day and night?",
     "relevant_texts": ["Open 24 hours a day, 7 days a week"],
     "ground_truth_answer": "Yes, SmartPark is open 24 hours a day, 7 days a week."
   },
   {
-    "question": "Where is SmartPark located?",
+    "question": "Where exactly is SmartPark located?",
     "relevant_texts": ["15 Green Street, Downtown"],
     "ground_truth_answer": "SmartPark is located at 15 Green Street, Downtown."
   },
   {
-    "question": "Do you support electric vehicles?",
+    "question": "Do you have EV charging for electric cars?",
     "relevant_texts": ["Electric vehicles (EV charging available)"],
-    "ground_truth_answer": "Yes, electric vehicles are supported and EV charging is available."
+    "ground_truth_answer": "Yes, SmartPark supports electric vehicles and provides EV charging."
   },
   {
-    "question": "How can I reserve a parking space?",
-    "relevant_texts": ["Reservations can be made via phone, our website, or mobile app"],
-    "ground_truth_answer": "You can reserve a parking space via phone, website, or mobile app."
+    "question": "What details do I need to provide to reserve a spot?",
+    "relevant_texts": [
+      "Name",
+      "Surname",
+      "Car number",
+      "Reservation start date",
+      "Reservation end date"
+    ],
+    "ground_truth_answer": "To reserve a parking space you must provide your name, surname, car number, reservation start date, and reservation end date."
   },
   {
-    "question": "What information is required for a reservation?",
-    "relevant_texts": ["Name", "Surname", "Car number", "Reservation start date", "Reservation end date"],
-    "ground_truth_answer": "To reserve a parking space, you must provide your name, surname, car number, reservation start date, and reservation end date."
+    "question": "Can I extend my parking time if I stay longer?",
+    "relevant_texts": [
+      "You can stay longer than you reserved if there are no reservations for the lot or other free lots are available at that time"
+    ],
+    "ground_truth_answer": "Yes, you can stay longer than your reservation if no other reservations conflict or if other spots are available."
   },
   {
-    "question": "Can I stay longer than I reserved?",
-    "relevant_texts": ["You can stay longer than you reserved if there are no reservations for the lot or other free lots are available at that time"],
-    "ground_truth_answer": "Yes, you can stay longer if there are no reservations or other lots are free at that time."
-  },
-  {
-    "question": "How do I cancel or change my reservation?",
+    "question": "How do I cancel my reservation?",
     "relevant_texts": ["calling the administration (public phone number 123456789)"],
     "ground_truth_answer": "You can cancel or change your reservation by calling the administration at 123456789."
   },
   {
-    "question": "What safety rules should I follow?",
+    "question": "What rules should visitors follow while parking?",
     "relevant_texts": [
       "No overnight camping or storing personal items",
       "Children must be supervised at all times",
       "Fire lanes must be kept clear at all times",
       "Smoking is prohibited in all parking areas"
     ],
-    "ground_truth_answer": "SmartPark requires that you do not camp or store items overnight, supervise children, keep fire lanes clear, and not smoke in parking areas."
+    "ground_truth_answer": "Visitors must not camp or store items overnight, must supervise children, keep fire lanes clear, and avoid smoking in parking areas."
   },
   {
-    "question": "What additional services are available?",
+    "question": "What extra services do you offer?",
     "relevant_texts": [
       "EV charging stations: Fast and standard charging available",
       "Valet parking for special events",
       "Car wash and detailing services available on request",
       "Monthly corporate plans with reserved spaces and priority service"
     ],
-    "ground_truth_answer": "Additional services include EV charging, valet parking, car wash/detailing, and monthly corporate plans with reserved spaces."
+    "ground_truth_answer": "SmartPark offers EV charging, valet parking, car wash and detailing services, and corporate monthly plans."
   },
   {
-    "question": "How can I contact SmartPark?",
-    "relevant_texts": ["Phone: 123456789", "Email: support@smartpark.com", "Website: www.smartpark.com"],
-    "ground_truth_answer": "You can contact SmartPark by phone at 123456789, by email at support@smartpark.com, or via the website www.smartpark.com."
+    "question": "How can I contact your parking service?",
+    "relevant_texts": [
+      "Phone: 123456789",
+      "Email: support@smartpark.com",
+      "Website: www.smartpark.com"
+    ],
+    "ground_truth_answer": "You can contact SmartPark by phone at 123456789, by email at support@smartpark.com, or through the website www.smartpark.com."
+  },
+  {
+    "question": "Do you allow overnight camping in the parking lot?",
+    "relevant_texts": ["No overnight camping or storing personal items"],
+    "ground_truth_answer": "No, overnight camping or storing personal items in the parking lot is not allowed."
+  },
+  {
+    "question": "Do you provide parking for motorcycles?",
+    "relevant_texts": ["Available for: - Cars - Motorcycles - Electric vehicles"],
+    "ground_truth_answer": "Yes, SmartPark provides parking for motorcycles."
   }
 ]

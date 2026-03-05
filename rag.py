@@ -1,7 +1,9 @@
+# rag.py
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from milvus_store import load_vector_store
+
 
 SYSTEM_PROMPT = """
 You are SmartPark Assistant.
@@ -14,26 +16,52 @@ Rules:
 - If asked for restricted information, politely refuse.
 """
 
-def create_rag_chain():
-    vector_store = load_vector_store()
-    retriever = vector_store.as_retriever()
 
-    llm = ChatOpenAI(
+def _create_llm() -> ChatOpenAI:
+    return ChatOpenAI(
         model="gpt-3.5-turbo",
         temperature=0
     )
 
-    # Prepend system instructions to prompt template
-    prompt_template = """{context}
-Question: {question}
-Answer in a helpful and safe way."""
-    PROMPT = PromptTemplate.from_template(SYSTEM_PROMPT + "\n" + prompt_template)
+
+def _create_prompt() -> PromptTemplate:
+    prompt_template = """
+    Use ONLY the information from the provided context.
+
+    If the answer is not present in the context, say:
+    "I don't have that information."
+
+    Do not invent rules, policies, or details.
+
+    Context:
+    {context}
+
+    Question: {question}
+
+    Answer clearly and briefly.
+    """ 
+
+    return PromptTemplate.from_template(
+        SYSTEM_PROMPT + "\n" + prompt_template
+    )
+
+
+def _create_retriever():
+    vector_store = load_vector_store()
+    return vector_store.as_retriever()
+
+
+def create_rag_chain():
+    retriever = _create_retriever()
+    llm = _create_llm()
+    prompt = _create_prompt()
 
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         retriever=retriever,
         chain_type="stuff",
-        chain_type_kwargs={"prompt": PROMPT},
+        chain_type_kwargs={"prompt": prompt},
         return_source_documents=False
     )
+
     return qa_chain
