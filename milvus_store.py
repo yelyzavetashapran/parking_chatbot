@@ -1,5 +1,4 @@
-# milvus_store.py
-from pymilvus import connections
+from pymilvus import connections, utility
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Milvus
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -65,6 +64,12 @@ def create_vector_store():
 
     start_connection()
 
+    if utility.has_collection(config.MILVUS_COLLECTION):
+        print("Milvus collection already exists. Skipping creation.")
+        return load_vector_store()
+
+    print("Creating Milvus vector store...")
+
     documents = _load_documents()
     split_docs = _split_documents(documents)
     enhanced_docs = _add_metadata(split_docs)
@@ -78,18 +83,21 @@ def create_vector_store():
         connection_args=_get_connection_args(),
     )
 
-    print(
-        f"Created {len(enhanced_docs)} chunks and stored in Milvus."
-    )
+    print(f"Created {len(enhanced_docs)} chunks and stored in Milvus.")
 
     return vector_store
 
 
 def load_vector_store():
+
+    start_connection()
+
     embeddings = _create_embeddings()
 
-    return Milvus(
+    vector_store = Milvus(
         embedding_function=embeddings,
         collection_name=config.MILVUS_COLLECTION,
         connection_args=_get_connection_args(),
     )
+
+    return vector_store

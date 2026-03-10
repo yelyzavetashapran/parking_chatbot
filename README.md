@@ -1,8 +1,8 @@
-# SmartPark AI Parking Chatbot (Version 1)
+# SmartPark AI Parking Chatbot (Version 2)
 
 SmartPark AI Parking Chatbot is a small **Retrieval-Augmented Generation (RAG)** project that answers questions about a parking service and allows users to create parking reservations. The system combines vector search with a language model to provide context-aware answers based on a parking knowledge base.
 
-More updates and bug fixes are coming. A presentation will be added soon.
+More updates and bug fixes are coming.
 
 ---
 
@@ -13,6 +13,8 @@ More updates and bug fixes are coming. A presentation will be added soon.
 * Parking reservation storage using SQLite
 * Guardrails to protect sensitive information
 * Evaluation pipeline with retrieval and response metrics
+* Human-in-the-loop for reservation confirmation/refusal
+* Email notification after review of the request by the administrator
 
 ---
 
@@ -24,6 +26,9 @@ config.py              # Configuration (API keys, chunking, Milvus settings)
 rag.py                 # RAG chain creation
 milvus_store.py        # Vector store creation and loading
 reservation.py         # Reservation database logic
+reservation_graph.py   # LangGraph implementation 
+email_service.py       # Email notification
+admin_api.py           # API implementation
 guardrails.py          # Security and safety rules
 
 evaluation.py          # RAG system evaluation
@@ -40,6 +45,7 @@ data/
 
 * Python
 * LangChain
+* LangGraph
 * OpenAI API
 * Milvus Vector Database
 * SQLite
@@ -94,7 +100,14 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Set your OpenAI API key in .env file.
+Set your OPENAI_API_KEY, EMAIL_USER, EMAIL_PASSWORD in .env file.
+Set up Milvus Standalone (https://milvus.io/docs/install_standalone-docker.md)
+
+Run API command in separate terminal:
+
+```
+uvicorn admin_api:app --reload
+```
 
 Run the chatbot:
 
@@ -124,3 +137,45 @@ python evaluation.py
 
 * Milvus engine is running in docker
 * Here is the instruction how to set up Milvus Standalone in docker: https://milvus.io/docs/install_standalone-docker.md
+
+
+## Example of usage
+
+Run docker container with Milvus Standalone:
+![alt text](example_usage_screenshots\image-1.png)
+
+Run API service:
+![alt text](example_usage_screenshots\image.png)
+
+API admin service is running:
+
+![alt text](example_usage_screenshots\image-2.png)
+![alt text](example_usage_screenshots\image-3.png)
+
+Run app.py in separated terminal and start use chatbot:
+![alt text](example_usage_screenshots\image-4.png)
+
+Questions answers:
+
+![alt text](example_usage_screenshots\image-5.png)
+
+Reservation flow:
+
+1) collect user's data and send it to admin review
+
+![alt text](example_usage_screenshots\image-6.png)
+
+2) ask bot about reservation status before admin approve
+
+![alt text](example_usage_screenshots\image-7.png)
+
+3) check API and approve, check if email is sent, and also reask chatbot about reservation status
+
+![alt text](example_usage_screenshots\image-8.png)
+![alt text](example_usage_screenshots\image-9.png)
+![alt text](example_usage_screenshots\image-10.png)
+![alt text](example_usage_screenshots\image-11.png)
+
+4) type 'exit' to finish chat
+
+![alt text](example_usage_screenshots\image-12.png)

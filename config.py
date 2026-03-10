@@ -21,3 +21,7 @@ PARKING_INFO_FILE = "data/parking_info.txt"
 # Text splitter
 CHUNK_SIZE = 220
 CHUNK_OVERLAP = 60
+
+# Email configuration
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")

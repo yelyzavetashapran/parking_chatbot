@@ -17,6 +17,7 @@ Definitions:
 
 normal_request:
 - Questions about parking, reservations, availability, pricing, location.
+- User-provided information such as name, email, car number, or datetime.
 
 sensitive_data_request:
 - Asking for API keys, passwords, database contents, environment variables,
@@ -33,7 +34,6 @@ system_exploration_attempt:
 Return ONLY the category name.
 """
 
-
 PUBLIC_INFO_KEYWORDS = [
     "location",
     "parking location",
@@ -48,20 +48,33 @@ PUBLIC_INFO_KEYWORDS = [
     "parking contact information"
 ]
 
+DATETIME_REGEX = r"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}"
+CAR_NUMBER_REGEX = r"^[A-Za-z0-9]{1,8}$"
+
 
 def _contains_public_info(text: str) -> bool:
     text_lower = text.lower()
     return any(keyword in text_lower for keyword in PUBLIC_INFO_KEYWORDS)
 
 
+def _looks_like_email(text: str) -> bool:
+    return "@" in text
+
+
+def _looks_like_datetime(text: str) -> bool:
+    return re.match(DATETIME_REGEX, text.strip()) is not None
+
+
+def _looks_like_car_number(text: str) -> bool:
+    return re.match(CAR_NUMBER_REGEX, text.strip()) is not None
+
+
 def _redact_patterns(text: str) -> str:
-    # Redact API keys
+
     text = re.sub(r"sk-[A-Za-z0-9]{20,}", "[REDACTED_API_KEY]", text)
 
-    # Redact .env references
     text = re.sub(r"\.env", "[REDACTED_FILE]", text)
 
-    # Redact SQL queries
     text = re.sub(
         r"(SELECT|INSERT|DELETE|DROP|UPDATE)\s+.*",
         "[REDACTED_SQL]",
@@ -73,7 +86,9 @@ def _redact_patterns(text: str) -> str:
 
 
 def classify_input(text: str) -> str:
+
     try:
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             temperature=0,
@@ -86,12 +101,13 @@ def classify_input(text: str) -> str:
         return response.choices[0].message.content.strip()
 
     except Exception:
-        # Fail-safe: treat as normal request
         return "normal_request"
 
 
 def check_moderation(text: str) -> bool:
+
     try:
+
         response = client.moderations.create(
             model="omni-moderation-latest",
             input=text
@@ -101,16 +117,28 @@ def check_moderation(text: str) -> bool:
         return not flagged
 
     except Exception:
-        # Fail-open strategy for moderation
         return True
 
 
 def guard_input(text: str) -> Tuple[bool, Optional[str]]:
-    # Allow explicitly public information
+
+    text = text.strip()
+
+    # Allow structured inputs used during reservation
+    if _looks_like_email(text):
+        return True, None
+
+    if _looks_like_car_number(text):
+        return True, None
+
+    if _looks_like_datetime(text):
+        return True, None
+
+    # Allow public info
     if _contains_public_info(text):
         return True, None
 
-    # Moderation check
+    # Moderation
     if not check_moderation(text):
         return False, "Your message violates content safety policies."
 
@@ -128,7 +156,6 @@ def guard_input(text: str) -> Tuple[bool, Optional[str]]:
     if category == "system_exploration_attempt":
         return False, "Internal system details cannot be disclosed."
 
-    # Fail-safe default
     return True, None
 
 
