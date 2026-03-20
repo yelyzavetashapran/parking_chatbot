@@ -292,7 +292,8 @@ def get_reservation_email_info(reservation_id: int):
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT email, first_name, parking_spot_id, datetime_from, datetime_to
+        SELECT email, first_name, last_name, car_number,
+               parking_spot_id, datetime_from, datetime_to
         FROM reservations
         WHERE id = ?
     """, (reservation_id,))
@@ -305,8 +306,10 @@ def get_reservation_email_info(reservation_id: int):
 
     return {
         "email": row[0],
-        "name": row[1],
-        "spot": row[2],
-        "from": row[3],
-        "to": row[4]
+        "first_name": row[1],
+        "last_name": row[2],
+        "car_number": row[3],
+        "spot": row[4],
+        "from": row[5],
+        "to": row[6]
     }

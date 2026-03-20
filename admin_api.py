@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 import reservation
 from email_service import send_reservation_email
+from config import MCP_API_KEY, MCP_URL
+import requests
 
 
 app = FastAPI(
@@ -37,7 +39,7 @@ def approve_reservation(reservation_id: int):
         if info:
 
             body = f"""
-Hello {info['name']},
+Hello {info['first_name']},
 
 Your parking reservation has been APPROVED.
 
@@ -54,6 +56,28 @@ Thank you for using SmartPark. If you have any questions, please contact admin v
                 body
             )
 
+            try:
+                response = requests.post(
+                    MCP_URL,
+                    headers={
+                        "X-API-KEY": MCP_API_KEY
+                    },
+                    params={
+                        "first_name": info["first_name"],
+                        "last_name": info["last_name"],
+                        "car_number": info["car_number"],
+                        "datetime_from": info["from"],
+                        "datetime_to": info["to"]
+                    },
+                    timeout=5
+                )
+
+                if response.status_code != 200:
+                    print("MCP error:", response.status_code, response.text)
+
+            except Exception as e:
+                print("MCP logging failed:", e)
+
         return {"status": "approved", "message": result}
 
     except Exception as e:
@@ -62,9 +86,7 @@ Thank you for using SmartPark. If you have any questions, please contact admin v
 
 @app.post("/admin/reservations/{reservation_id}/reject")
 def reject_reservation(reservation_id: int):
-    """
-    Reject a reservation and send email notification.
-    """
+
     try:
         result = reservation.reject_reservation(reservation_id)
 
@@ -73,7 +95,7 @@ def reject_reservation(reservation_id: int):
         if info:
 
             body = f"""
-Hello {info['name']},
+Hello {info['first_name']},
 
 Unfortunately your parking reservation was REJECTED.
 

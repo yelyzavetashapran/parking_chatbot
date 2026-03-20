@@ -25,3 +25,8 @@ CHUNK_OVERLAP = 60
 # Email configuration
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+
+#MCP server and output file
+OUTPUT_FILE = "data/approved_reservations.txt"
+MCP_API_KEY = os.getenv("MCP_API_KEY")
+MCP_URL = "http://localhost:9000/log-approved"

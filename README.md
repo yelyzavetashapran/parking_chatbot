@@ -100,13 +100,19 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Set your OPENAI_API_KEY, EMAIL_USER, EMAIL_PASSWORD in .env file.
+Set your OPENAI_API_KEY, EMAIL_USER, EMAIL_PASSWORD, MCP_API_KEY in .env file.
 Set up Milvus Standalone (https://milvus.io/docs/install_standalone-docker.md)
+
+Run MCP server command in separate terminal:
+
+```
+uvicorn mcp_server:app --port 9000
+```
 
 Run API command in separate terminal:
 
 ```
-uvicorn admin_api:app --reload
+uvicorn admin_api:app --port 8000
 ```
 
 Run the chatbot:
@@ -144,6 +150,21 @@ python evaluation.py
 Run docker container with Milvus Standalone:
 ![alt text](example_usage_screenshots\image-1.png)
 
+Run MCP server:
+![alt text](example_usage_screenshots\image-13.png)
+Also check if MCP service is secure. 
+Try without API key or with wrong API key
+```
+curl -X POST "http://localhost:9000/log-approved?first_name=John&last_name=Doe&car_number=ABC123&datetime_from=2026-03-21%2010:00&datetime_to=2026-03-21%2014:00" \ -H "X-API-KEY: wrong_api_key"
+```
+![alt text](example_usage_screenshots\image-15.png)
+
+Try with correct API key
+```
+curl -X POST "http://localhost:9000/log-approved?first_name=John&last_name=Doe&car_number=ABC123&datetime_from=2026-03-21%2010:00&datetime_to=2026-03-21%2014:00" \ -H "X-API-KEY: correct_api_key"
+```
+![alt text](example_usage_screenshots\image-16.png)
+
 Run API service:
 ![alt text](example_usage_screenshots\image.png)
 
@@ -176,6 +197,9 @@ Reservation flow:
 ![alt text](example_usage_screenshots\image-10.png)
 ![alt text](example_usage_screenshots\image-11.png)
 
-4) type 'exit' to finish chat
+4) check if output file is created:
+![alt text](example_usage_screenshots\image-14.png)
+
+5) type 'exit' to finish chat
 
 ![alt text](example_usage_screenshots\image-12.png)
