@@ -192,58 +192,58 @@ python -m pytest test_pipeline.py -v
 ## Example of usage
 
 Run docker container with Milvus Standalone:
-![alt text](example_usage_screenshots\image-1.png)
+![alt text](example_usage_screenshots/image-1.png)
 
 Run MCP server:
-![alt text](example_usage_screenshots\image-13.png)
+![alt text](example_usage_screenshots/image-13.png)
 Also check if MCP service is secure. 
 Try without API key or with wrong API key
 ```
-curl -X POST "http://localhost:9000/log-approved?first_name=John&last_name=Doe&car_number=ABC123&datetime_from=2026-03-21%2010:00&datetime_to=2026-03-21%2014:00" \ -H "X-API-KEY: wrong_api_key"
+curl -X POST "http://localhost:9000/log-approved?first_name=John&last_name=Doe&car_number=ABC123&datetime_from=2026-03-21%2010:00&datetime_to=2026-03-21%2014:00" / -H "X-API-KEY: wrong_api_key"
 ```
-![alt text](example_usage_screenshots\image-15.png)
+![alt text](example_usage_screenshots/image-15.png)
 
 Try with correct API key
 ```
-curl -X POST "http://localhost:9000/log-approved?first_name=John&last_name=Doe&car_number=ABC123&datetime_from=2026-03-21%2010:00&datetime_to=2026-03-21%2014:00" \ -H "X-API-KEY: correct_api_key"
+curl -X POST "http://localhost:9000/log-approved?first_name=John&last_name=Doe&car_number=ABC123&datetime_from=2026-03-21%2010:00&datetime_to=2026-03-21%2014:00" / -H "X-API-KEY: correct_api_key"
 ```
-![alt text](example_usage_screenshots\image-16.png)
+![alt text](example_usage_screenshots/image-16.png)
 
 Run API service:
-![alt text](example_usage_screenshots\image.png)
+![alt text](example_usage_screenshots/image.png)
 
 API admin service is running:
 
-![alt text](example_usage_screenshots\image-2.png)
-![alt text](example_usage_screenshots\image-3.png)
+![alt text](example_usage_screenshots/image-2.png)
+![alt text](example_usage_screenshots/image-3.png)
 
 Run app.py in separated terminal and start use chatbot:
-![alt text](example_usage_screenshots\image-4.png)
+![alt text](example_usage_screenshots/image-4.png)
 
 Questions answers:
 
-![alt text](example_usage_screenshots\image-5.png)
+![alt text](example_usage_screenshots/image-5.png)
 
 Reservation flow:
 
 1) collect user's data → LangGraph runs `create_proposal` → `create_pending` → `notify_pending`, then pauses at `admin_review` interrupt; graph state saved to `data/checkpoints.db`
 
-![alt text](example_usage_screenshots\image-6.png)
+![alt text](example_usage_screenshots/image-6.png)
 
 2) ask bot about reservation status before admin approves
 
-![alt text](example_usage_screenshots\image-7.png)
+![alt text](example_usage_screenshots/image-7.png)
 
 3) admin calls `POST /admin/reservations/{id}/approve` → API retrieves `thread_id` from DB, calls `graph.update_state({"admin_decision": "approve"})` and `graph.invoke(None, config)` to resume; graph runs `notify_approved` → `mcp_log`; approval email is sent
 
-![alt text](example_usage_screenshots\image-8.png)
-![alt text](example_usage_screenshots\image-9.png)
-![alt text](example_usage_screenshots\image-10.png)
-![alt text](example_usage_screenshots\image-11.png)
+![alt text](example_usage_screenshots/image-8.png)
+![alt text](example_usage_screenshots/image-9.png)
+![alt text](example_usage_screenshots/image-10.png)
+![alt text](example_usage_screenshots/image-11.png)
 
 4) check if output file is created (`data/approved_reservations.txt` written by MCP server):
-![alt text](example_usage_screenshots\image-14.png)
+![alt text](example_usage_screenshots/image-14.png)
 
 5) type 'exit' to finish chat
 
-![alt text](example_usage_screenshots\image-12.png)
+![alt text](example_usage_screenshots/image-12.png)
