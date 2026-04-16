@@ -142,40 +142,40 @@ python evaluation.py
 ## Example of usage
 
 Run docker container with Milvus Standalone:
-![alt text](example_usage_screenshots\image-1.png)
+![alt text](example_usage_screenshots/image-1.png)
 
 Run API service:
-![alt text](example_usage_screenshots\image.png)
+![alt text](example_usage_screenshots/image.png)
 
 API admin service is running:
 
-![alt text](example_usage_screenshots\image-2.png)
-![alt text](example_usage_screenshots\image-3.png)
+![alt text](example_usage_screenshots/image-2.png)
+![alt text](example_usage_screenshots/image-3.png)
 
 Run app.py in separated terminal and start use chatbot:
-![alt text](example_usage_screenshots\image-4.png)
+![alt text](example_usage_screenshots/image-4.png)
 
 Questions answers:
 
-![alt text](example_usage_screenshots\image-5.png)
+![alt text](example_usage_screenshots/image-5.png)
 
 Reservation flow:
 
 1) collect user's data and send it to admin review
 
-![alt text](example_usage_screenshots\image-6.png)
+![alt text](example_usage_screenshots/image-6.png)
 
 2) ask bot about reservation status before admin approve
 
-![alt text](example_usage_screenshots\image-7.png)
+![alt text](example_usage_screenshots/image-7.png)
 
 3) check API and approve, check if email is sent, and also reask chatbot about reservation status
 
-![alt text](example_usage_screenshots\image-8.png)
-![alt text](example_usage_screenshots\image-9.png)
-![alt text](example_usage_screenshots\image-10.png)
-![alt text](example_usage_screenshots\image-11.png)
+![alt text](example_usage_screenshots/image-8.png)
+![alt text](example_usage_screenshots/image-9.png)
+![alt text](example_usage_screenshots/image-10.png)
+![alt text](example_usage_screenshots/image-11.png)
 
 4) type 'exit' to finish chat
 
-![alt text](example_usage_screenshots\image-12.png)
+![alt text](example_usage_screenshots/image-12.png)
