@@ -1,8 +1,6 @@
-# SmartPark AI Parking Chatbot (Version 2)
+# SmartPark AI Parking Chatbot (Version 4)
 
-SmartPark AI Parking Chatbot is a small **Retrieval-Augmented Generation (RAG)** project that answers questions about a parking service and allows users to create parking reservations. The system combines vector search with a language model to provide context-aware answers based on a parking knowledge base.
-
-More updates and bug fixes are coming.
+SmartPark AI Parking Chatbot is a **Retrieval-Augmented Generation (RAG)** project that answers questions about a parking service and manages parking reservations with human-in-the-loop admin review. The system combines vector search with a language model to provide context-aware answers, and uses a LangGraph state machine with SQLite checkpointing to persist reservation workflows across process restarts.
 
 ---
 
@@ -13,30 +11,69 @@ More updates and bug fixes are coming.
 * Parking reservation storage using SQLite
 * Guardrails to protect sensitive information
 * Evaluation pipeline with retrieval and response metrics
-* Human-in-the-loop for reservation confirmation/refusal
-* Email notification after review of the request by the administrator
+* Human-in-the-loop (HITL) reservation workflow using LangGraph `interrupt_before` + SqliteSaver
+* Reservation graph state persisted in SQLite (`data/checkpoints.db`) — survives process restarts
+* Admin approval/rejection resumes the graph via `update_state` + `invoke`
+* Email notification after admin review of the reservation request
+* Automated test pipeline for the reservation graph (5 pytest tests)
+
+---
+
+## Reservation Graph
+
+The reservation workflow is implemented as a LangGraph state machine with a human-in-the-loop interrupt. When a user submits a reservation, the graph runs up to the `admin_review` node and then pauses, persisting state in `data/checkpoints.db`. The admin API resumes execution by injecting the decision and re-invoking the graph.
+
+```
+create_proposal → (error?) → END
+      ↓ (ok)
+create_pending → notify_pending → [INTERRUPT: admin_review]
+                                        ↓
+                                  admin_review (conditional)
+                                 ↙                ↘
+                        notify_approved      notify_rejected
+                              ↓                    ↓
+                          mcp_log                 END
+                              ↓
+                             END
+```
+
+| Node | Description |
+|------|-------------|
+| `create_proposal` | Validates fields, finds an available parking spot (P1–P8) |
+| `create_pending` | Inserts reservation into SQLite with `status=pending` and stores `thread_id` |
+| `notify_pending` | Returns "awaiting approval" message to user |
+| `admin_review` | **Interrupt point** — graph pauses here until admin decision |
+| `notify_approved` | Sets `status=approved`, sends approval email |
+| `notify_rejected` | Sets `status=rejected`, sends rejection email |
+| `mcp_log` | POSTs approved reservation to the MCP audit server (port 9000) |
+
+The graph instance (with SqliteSaver checkpointer) is a singleton defined in `graph_instance.py` and shared by both `app.py` and `admin_api.py`.
 
 ---
 
 ## Project Structure
 
 ```
-app.py                 # Main chatbot entry point
+app.py                 # Main chatbot entry point (CLI state machine)
 config.py              # Configuration (API keys, chunking, Milvus settings)
 rag.py                 # RAG chain creation
 milvus_store.py        # Vector store creation and loading
-reservation.py         # Reservation database logic
-reservation_graph.py   # LangGraph implementation 
-email_service.py       # Email notification
-admin_api.py           # API implementation
-guardrails.py          # Security and safety rules
+reservation.py         # Reservation database logic (SQLite)
+reservation_graph.py   # LangGraph HITL workflow definition
+graph_instance.py      # Singleton graph + SqliteSaver checkpointer
+admin_api.py           # Admin REST API (approve/reject via graph resume)
+mcp_server.py          # Audit log microservice (port 9000)
+email_service.py       # Email notification via Gmail SMTP
+guardrails.py          # Input/output security and safety rules
 
-evaluation.py          # RAG system evaluation
+evaluation.py          # RAG system evaluation pipeline
 evaluation_dataset.json
+test_pipeline.py       # Automated tests for the reservation graph
 
 data/
- ├─ parking_info.txt   # Knowledge base
- └─ parking_chatbot.db # SQLite reservation database
+ ├─ parking_info.txt      # Knowledge base
+ ├─ parking_chatbot.db    # SQLite reservation database
+ └─ checkpoints.db        # LangGraph state checkpoints (runtime)
 ```
 
 ---
@@ -48,7 +85,8 @@ data/
 * LangGraph
 * OpenAI API
 * Milvus Vector Database
-* SQLite
+* SQLite (reservations + LangGraph checkpoints)
+* `langgraph-checkpoint-sqlite` (graph state persistence)
 
 ---
 
@@ -127,6 +165,12 @@ Run evaluation:
 python evaluation.py
 ```
 
+Run tests:
+
+```
+python -m pytest test_pipeline.py -v
+```
+
 ---
 
 ## Example Questions
@@ -182,22 +226,22 @@ Questions answers:
 
 Reservation flow:
 
-1) collect user's data and send it to admin review
+1) collect user's data → LangGraph runs `create_proposal` → `create_pending` → `notify_pending`, then pauses at `admin_review` interrupt; graph state saved to `data/checkpoints.db`
 
 ![alt text](example_usage_screenshots\image-6.png)
 
-2) ask bot about reservation status before admin approve
+2) ask bot about reservation status before admin approves
 
 ![alt text](example_usage_screenshots\image-7.png)
 
-3) check API and approve, check if email is sent, and also reask chatbot about reservation status
+3) admin calls `POST /admin/reservations/{id}/approve` → API retrieves `thread_id` from DB, calls `graph.update_state({"admin_decision": "approve"})` and `graph.invoke(None, config)` to resume; graph runs `notify_approved` → `mcp_log`; approval email is sent
 
 ![alt text](example_usage_screenshots\image-8.png)
 ![alt text](example_usage_screenshots\image-9.png)
 ![alt text](example_usage_screenshots\image-10.png)
 ![alt text](example_usage_screenshots\image-11.png)
 
-4) check if output file is created:
+4) check if output file is created (`data/approved_reservations.txt` written by MCP server):
 ![alt text](example_usage_screenshots\image-14.png)
 
 5) type 'exit' to finish chat

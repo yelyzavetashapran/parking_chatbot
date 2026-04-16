@@ -13,10 +13,11 @@ class ReservationState(TypedDict):
     proposal: Optional[dict]
     reservation_id: Optional[int]
     message: Optional[str]
+    thread_id: Optional[str]
+    admin_decision: Optional[str]
 
 
 def create_proposal(state: ReservationState):
-
     proposal = reservation.create_reservation_proposal(
         state["first_name"],
         state["last_name"],
@@ -27,35 +28,99 @@ def create_proposal(state: ReservationState):
     )
 
     if "error" in proposal:
-        return {"message": proposal["error"]}
+        return {"message": proposal["error"], "proposal": None}
 
     return {"proposal": proposal}
 
 
+def route_after_proposal(state: ReservationState) -> str:
+    if state.get("proposal") is None:
+        return END
+    return "create_pending"
+
+
 def create_pending(state: ReservationState):
-
-    proposal = state["proposal"]
-    reservation_id = reservation.create_pending_reservation(proposal)
-
+    reservation_id = reservation.create_pending_reservation(
+        state["proposal"], state["thread_id"]
+    )
     return {"reservation_id": reservation_id}
 
 
-def send_to_admin(state: ReservationState):
-    return {"message": 'Your reservation request has been sent to the administrator and is awaiting approval.'}
+def notify_pending(state: ReservationState):
+    return {"message": "Your reservation request has been sent to the administrator and is awaiting approval."}
 
 
-def build_reservation_graph():
+def admin_review(state: ReservationState):
+    return {}
 
+
+def route_admin_decision(state: ReservationState) -> str:
+    if state.get("admin_decision") == "approve":
+        return "notify_approved"
+    return "notify_rejected"
+
+
+def notify_approved(state: ReservationState):
+    from email_service import send_reservation_email
+    reservation.approve_reservation(state["reservation_id"])
+    info = reservation.get_reservation_email_info(state["reservation_id"])
+    body = (f"Hello {info['first_name']},\n\nYour reservation has been approved.\n"
+            f"Spot: {info['spot']} | {info['from']} → {info['to']}")
+    send_reservation_email(info["email"], "SmartPark Reservation Approved", body)
+    return {"message": "Your reservation has been approved."}
+
+
+def notify_rejected(state: ReservationState):
+    from email_service import send_reservation_email
+    reservation.reject_reservation(state["reservation_id"])
+    info = reservation.get_reservation_email_info(state["reservation_id"])
+    body = (f"Hello {info['first_name']},\n\nYour reservation has been rejected. "
+            f"Please call +1234567 for alternatives.")
+    send_reservation_email(info["email"], "SmartPark Reservation Rejected", body)
+    return {"message": "Your reservation has been rejected."}
+
+
+def mcp_log(state: ReservationState):
+    import requests
+    from config import MCP_URL, MCP_API_KEY
+    info = reservation.get_reservation_email_info(state["reservation_id"])
+    try:
+        requests.post(MCP_URL, headers={"X-API-KEY": MCP_API_KEY},
+                      params={"first_name": info["first_name"], "last_name": info["last_name"],
+                              "car_number": info["car_number"], "datetime_from": info["from"],
+                              "datetime_to": info["to"]}, timeout=5)
+    except Exception as e:
+        print("MCP log failed:", e)
+    return {"message": state.get("message")}
+
+
+def build_reservation_graph(checkpointer=None):
     builder = StateGraph(ReservationState)
 
     builder.add_node("create_proposal", create_proposal)
     builder.add_node("create_pending", create_pending)
-    builder.add_node("send_to_admin", send_to_admin)
+    builder.add_node("notify_pending", notify_pending)
+    builder.add_node("admin_review", admin_review)
+    builder.add_node("notify_approved", notify_approved)
+    builder.add_node("mcp_log", mcp_log)
+    builder.add_node("notify_rejected", notify_rejected)
 
     builder.set_entry_point("create_proposal")
+    builder.add_conditional_edges(
+        "create_proposal", route_after_proposal,
+        {"create_pending": "create_pending", END: END},
+    )
+    builder.add_edge("create_pending", "notify_pending")
+    builder.add_edge("notify_pending", "admin_review")
+    builder.add_conditional_edges(
+        "admin_review", route_admin_decision,
+        {"notify_approved": "notify_approved", "notify_rejected": "notify_rejected"},
+    )
+    builder.add_edge("notify_approved", "mcp_log")
+    builder.add_edge("mcp_log", END)
+    builder.add_edge("notify_rejected", END)
 
-    builder.add_edge("create_proposal", "create_pending")
-    builder.add_edge("create_pending", "send_to_admin")
-    builder.add_edge("send_to_admin", END)
-
-    return builder.compile()
+    return builder.compile(
+        checkpointer=checkpointer,
+        interrupt_before=["admin_review"] if checkpointer else [],
+    )

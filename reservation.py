@@ -32,6 +32,13 @@ def initialize_database():
     """)
 
     conn.commit()
+
+    try:
+        cursor.execute("ALTER TABLE reservations ADD COLUMN thread_id TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
     conn.close()
 
 
@@ -153,7 +160,7 @@ def create_reservation_proposal(
     }
 
 
-def create_pending_reservation(proposal: Dict[str, Any]) -> int:
+def create_pending_reservation(proposal: Dict[str, Any], thread_id: str = None) -> int:
 
     conn = _get_connection()
     cursor = conn.cursor()
@@ -171,9 +178,10 @@ def create_pending_reservation(proposal: Dict[str, Any]) -> int:
             insert_timestamp,
             update_timestamp,
             parking_spot_id,
-            status
+            status,
+            thread_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         proposal["first_name"],
         proposal["last_name"],
@@ -184,7 +192,8 @@ def create_pending_reservation(proposal: Dict[str, Any]) -> int:
         now_str,
         now_str,
         proposal["spot_number"],
-        "pending"
+        "pending",
+        thread_id
     ))
 
     reservation_id = cursor.lastrowid
@@ -313,3 +322,12 @@ def get_reservation_email_info(reservation_id: int):
         "from": row[5],
         "to": row[6]
     }
+
+
+def get_thread_id(reservation_id: int) -> Optional[str]:
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT thread_id FROM reservations WHERE id = ?", (reservation_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None

@@ -21,6 +21,7 @@ fastapi
 uvicorn
 
 langgraph==0.2.36
+langgraph-checkpoint-sqlite
+pytest
 
-slowapi
 filelock

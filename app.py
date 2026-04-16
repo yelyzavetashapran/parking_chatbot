@@ -1,9 +1,10 @@
 import os
+import uuid
 from dotenv import load_dotenv
 
 from milvus_store import create_vector_store
 from rag import create_rag_chain
-from reservation_graph import build_reservation_graph
+from graph_instance import reservation_graph
 
 import reservation
 import guardrails
@@ -68,7 +69,7 @@ def initialize_system():
 
     if not os.getenv("OPENAI_API_KEY"):
         print("OPENAI_API_KEY not found in .env")
-        return None, None
+        return None
 
     print("Initializing SQLite...")
     reservation.initialize_database()
@@ -79,9 +80,8 @@ def initialize_system():
     print("Vector store ready")
 
     qa_chain = create_rag_chain()
-    reservation_graph = build_reservation_graph()
 
-    return qa_chain, reservation_graph
+    return qa_chain
 
 
 def run_qa(qa_chain, user_input):
@@ -101,7 +101,7 @@ def ask_next_question(step, fields, questions):
 
 def main():
 
-    qa_chain, reservation_graph = initialize_system()
+    qa_chain = initialize_system()
 
     if not qa_chain:
         return
@@ -226,14 +226,21 @@ def main():
                     continue
 
 
-                result = reservation_graph.invoke({
-                    "first_name": reservation_data["first_name"],
-                    "last_name": reservation_data["last_name"],
-                    "email": reservation_data["email"],
-                    "car_number": reservation_data["car_number"],
-                    "datetime_from": reservation_data["datetime_from"],
-                    "datetime_to": reservation_data["datetime_to"],
-                })
+                thread_id = str(uuid.uuid4())
+                config = {"configurable": {"thread_id": thread_id}}
+                result = reservation_graph.invoke(
+                    {
+                        "first_name": reservation_data["first_name"],
+                        "last_name": reservation_data["last_name"],
+                        "email": reservation_data["email"],
+                        "car_number": reservation_data["car_number"],
+                        "datetime_from": reservation_data["datetime_from"],
+                        "datetime_to": reservation_data["datetime_to"],
+                        "thread_id": thread_id,
+                        "admin_decision": None,
+                    },
+                    config,
+                )
 
                 message = guardrails.guard_output(result.get("message", "Reservation processed."))
 
