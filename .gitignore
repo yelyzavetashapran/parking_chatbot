@@ -1,0 +1,9 @@
+.venv
+__pycache__
+.env
+*.lock
+data/approved_reservations.txt
+data/parking_chatbot.db
+data/checkpoints.db
+data/checkpoints.db-shm
+data/checkpoints.db-wal

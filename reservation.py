@@ -1,9 +1,11 @@
 import sqlite3
+import re
 from datetime import datetime
 from typing import Tuple, Optional, Dict, Any
 from config import DB_FILE
 
 TOTAL_SPOTS = 8
+
 
 def _get_connection():
     return sqlite3.connect(DB_FILE)
@@ -18,17 +20,25 @@ def initialize_database():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             first_name TEXT NOT NULL,
             last_name TEXT NOT NULL,
+            email TEXT NOT NULL,
             car_number TEXT NOT NULL,
             datetime_from TEXT NOT NULL,
             datetime_to TEXT NOT NULL,
             insert_timestamp TEXT NOT NULL,
             update_timestamp TEXT NOT NULL,
             parking_spot_id TEXT NOT NULL,
-            confirmed INTEGER NOT NULL
+            status TEXT NOT NULL
         )
     """)
 
     conn.commit()
+
+    try:
+        cursor.execute("ALTER TABLE reservations ADD COLUMN thread_id TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
     conn.close()
 
 
@@ -52,13 +62,26 @@ def validate_car_number(car_number: str) -> Tuple[bool, Optional[str]]:
     return True, None
 
 
+def validate_email(email: str) -> Tuple[bool, Optional[str]]:
+
+    email_regex = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+
+    if not re.match(email_regex, email):
+        return False, "Invalid email format."
+
+    if len(email) > 254:
+        return False, "Email is too long."
+
+    return True, None
+
+
 def find_first_available_spot(start_dt: str, end_dt: str) -> Optional[str]:
     conn = _get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
         SELECT parking_spot_id FROM reservations
-        WHERE confirmed = 1 AND (
+        WHERE status = 'approved' AND (
             (datetime_from <= ? AND datetime_to > ?) OR
             (datetime_from < ? AND datetime_to >= ?) OR
             (datetime_from >= ? AND datetime_to <= ?)
@@ -66,7 +89,6 @@ def find_first_available_spot(start_dt: str, end_dt: str) -> Optional[str]:
     """, (start_dt, start_dt, end_dt, end_dt, start_dt, end_dt))
 
     occupied = {row[0] for row in cursor.fetchall()}
-
     conn.close()
 
     for i in range(1, TOTAL_SPOTS + 1):
@@ -80,6 +102,7 @@ def find_first_available_spot(start_dt: str, end_dt: str) -> Optional[str]:
 def create_reservation_proposal(
     first_name: str,
     last_name: str,
+    email: str,
     car_number: str,
     datetime_from_str: str,
     datetime_to_str: str
@@ -111,7 +134,7 @@ def create_reservation_proposal(
 
         cursor.execute("""
             SELECT datetime_to FROM reservations
-            WHERE confirmed = 1
+            WHERE status = 'approved'
             ORDER BY datetime_to ASC
             LIMIT 1
         """)
@@ -129,6 +152,7 @@ def create_reservation_proposal(
     return {
         "first_name": first_name,
         "last_name": last_name,
+        "email": email,
         "car_number": car_number,
         "datetime_from": datetime_from_str,
         "datetime_to": datetime_to_str,
@@ -136,12 +160,7 @@ def create_reservation_proposal(
     }
 
 
-def confirm_reservation(proposal: Dict[str, Any], confirm: bool = True) -> str:
-    if not proposal:
-        return "No reservation to confirm."
-
-    if not confirm:
-        return "Reservation cancelled."
+def create_pending_reservation(proposal: Dict[str, Any], thread_id: str = None) -> int:
 
     conn = _get_connection()
     cursor = conn.cursor()
@@ -149,32 +168,166 @@ def confirm_reservation(proposal: Dict[str, Any], confirm: bool = True) -> str:
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     cursor.execute("""
-        INSERT INTO reservations
-        (
+        INSERT INTO reservations (
             first_name,
             last_name,
+            email,
             car_number,
             datetime_from,
             datetime_to,
             insert_timestamp,
             update_timestamp,
             parking_spot_id,
-            confirmed
+            status,
+            thread_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         proposal["first_name"],
         proposal["last_name"],
+        proposal["email"],
         proposal["car_number"],
         proposal["datetime_from"],
         proposal["datetime_to"],
         now_str,
         now_str,
         proposal["spot_number"],
-        1
+        "pending",
+        thread_id
     ))
+
+    reservation_id = cursor.lastrowid
 
     conn.commit()
     conn.close()
 
-    return f"Reservation confirmed. Your parking spot is {proposal['spot_number']}."
+    return reservation_id
+
+
+def approve_reservation(reservation_id: int) -> str:
+    conn = _get_connection()
+    cursor = conn.cursor()
+
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    cursor.execute("""
+        UPDATE reservations
+        SET status = 'approved', update_timestamp = ?
+        WHERE id = ?
+    """, (now_str, reservation_id))
+
+    conn.commit()
+    conn.close()
+
+    return f"Reservation {reservation_id} approved."
+
+
+def reject_reservation(reservation_id: int) -> str:
+    conn = _get_connection()
+    cursor = conn.cursor()
+
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    cursor.execute("""
+        UPDATE reservations
+        SET status = 'rejected', update_timestamp = ?
+        WHERE id = ?
+    """, (now_str, reservation_id))
+
+    conn.commit()
+    conn.close()
+
+    return f"Reservation {reservation_id} rejected."
+
+
+def get_pending_reservations():
+    conn = _get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, first_name, last_name, car_number,
+               datetime_from, datetime_to, parking_spot_id, status
+        FROM reservations
+        WHERE status = 'pending'
+    """)
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    reservations = []
+
+    for r in rows:
+        reservations.append({
+            "id": r[0],
+            "first_name": r[1],
+            "last_name": r[2],
+            "car_number": r[3],
+            "datetime_from": r[4],
+            "datetime_to": r[5],
+            "parking_spot_id": r[6],
+            "status": r[7]
+        })
+
+    return reservations
+
+
+def get_user_reservation_status(first_name, last_name, car_number):
+
+    conn = _get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT status
+        FROM reservations
+        WHERE first_name = ?
+        AND last_name = ?
+        AND car_number = ?
+        ORDER BY insert_timestamp DESC
+        LIMIT 1
+    """, (first_name, last_name, car_number))
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+
+    return row[0]
+
+
+def get_reservation_email_info(reservation_id: int):
+
+    conn = _get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT email, first_name, last_name, car_number,
+               parking_spot_id, datetime_from, datetime_to
+        FROM reservations
+        WHERE id = ?
+    """, (reservation_id,))
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+
+    return {
+        "email": row[0],
+        "first_name": row[1],
+        "last_name": row[2],
+        "car_number": row[3],
+        "spot": row[4],
+        "from": row[5],
+        "to": row[6]
+    }
+
+
+def get_thread_id(reservation_id: int) -> Optional[str]:
+    conn = _get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT thread_id FROM reservations WHERE id = ?", (reservation_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None
